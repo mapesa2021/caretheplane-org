@@ -28,6 +28,55 @@ export default function PaymentModal({
     customerPhone: '',
   });
 
+  // Function to wait for payment confirmation from ZenoPay
+  const waitForPaymentConfirmation = async (orderId: string): Promise<void> => {
+    const maxAttempts = 30; // Wait up to 5 minutes (30 * 10 seconds)
+    let attempts = 0;
+    
+    // For test payments, simulate faster confirmation
+    const isTestPayment = normalizePhoneForZenoPay(formData.customerPhone) === '0754546567';
+    const checkInterval = isTestPayment ? 2000 : 10000; // 2s for test, 10s for real
+    const maxTestAttempts = isTestPayment ? 3 : maxAttempts; // Faster test confirmation
+    
+    const pollPaymentStatus = async (): Promise<boolean> => {
+      try {
+        const response = await fetch(`/zenopay-status-check.php?order_id=${orderId}`);
+        const result = await response.json();
+        
+        if (result.payment_status === 'COMPLETED') {
+          // Payment successful - redirect to success page
+          window.location.href = `/payment/success?orderId=${orderId}&amount=${amount}&name=${encodeURIComponent(formData.customerName)}&email=${encodeURIComponent(formData.customerEmail)}&phone=${encodeURIComponent(formData.customerPhone)}&test=${isTestPayment ? 'true' : 'false'}`;
+          return true;
+        } else if (result.payment_status === 'FAILED') {
+          // Payment failed
+          throw new Error('Payment was declined or failed');
+        }
+        // Still pending, continue polling
+        return false;
+      } catch (error) {
+        console.error('Error checking payment status:', error);
+        return false;
+      }
+    };
+    
+    // Poll for payment confirmation
+    const finalMaxAttempts = isTestPayment ? maxTestAttempts : maxAttempts;
+    while (attempts < finalMaxAttempts) {
+      const isComplete = await pollPaymentStatus();
+      if (isComplete) return;
+      
+      // Wait before next check
+      await new Promise(resolve => setTimeout(resolve, checkInterval));
+      attempts++;
+    }
+    
+    // Timeout - payment not confirmed within time limit
+    const timeoutMessage = isTestPayment 
+      ? 'Test payment timeout. Please try again.'
+      : 'Payment confirmation timeout. Please check your mobile money app or try again.';
+    throw new Error(timeoutMessage);
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -56,17 +105,15 @@ export default function PaymentModal({
       const isTestPhone = normalizedPhone === '0754546567';
       
       if (isTestPhone) {
-        console.log('🧪 Test payment detected - simulating success');
+        console.log('🧪 Test payment detected - will wait for confirmation');
         
-        // Simulate delay
+        // Simulate delay for test payment initiation
         await new Promise(resolve => setTimeout(resolve, 2000));
         
         setPaymentStatus('success');
         
-        // Redirect to success page after 3 seconds
-        setTimeout(() => {
-          window.location.href = `/payment/success?orderId=${orderId}&amount=${amount}&name=${encodeURIComponent(formData.customerName)}&email=${encodeURIComponent(formData.customerEmail)}&phone=${encodeURIComponent(formData.customerPhone)}&test=true`;
-        }, 3000);
+        // Wait for payment confirmation (faster for test)
+        await waitForPaymentConfirmation(orderId);
         
         return;
       }
@@ -105,10 +152,9 @@ export default function PaymentModal({
       if (result.status === 'success' && result.resultcode === '000') {
         setPaymentStatus('success');
         
-        // Show success message and redirect
-        setTimeout(() => {
-          window.location.href = `/payment/success?orderId=${orderId}&amount=${amount}&name=${encodeURIComponent(formData.customerName)}&email=${encodeURIComponent(formData.customerEmail)}&phone=${encodeURIComponent(formData.customerPhone)}`;
-        }, 2000);
+        // Don't redirect immediately - wait for payment confirmation
+        // Show waiting message and poll for payment status
+        await waitForPaymentConfirmation(orderId);
       } else {
         console.error('❌ Payment initiation failed:', result);
         throw new Error(result.message || 'Payment initiation failed');
@@ -275,13 +321,27 @@ export default function PaymentModal({
         {/* Success State */}
         {paymentStatus === 'success' && (
           <div className="px-6 py-8 text-center">
-            <div className="text-5xl mb-4">🎉</div>
-            <h3 className="text-lg font-semibold text-green-900 mb-2">Payment Initiated!</h3>
-            <p className="text-gray-600">
+            <div className="animate-pulse text-5xl mb-4">⏳</div>
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">Waiting for Payment Confirmation</h3>
+            <p className="text-gray-600 mb-4">
               {formData.customerPhone === '0754546567' 
-                ? 'Test payment simulation started. Redirecting to success page...'
-                : 'Redirecting to ZenoPay payment page...'
+                ? 'Test payment initiated. Waiting for confirmation...'
+                : 'Payment request sent to your mobile money provider. Please complete the payment on your phone.'
               }
+            </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-blue-800">
+                <strong>Next Steps:</strong>
+              </p>
+              <ul className="text-sm text-blue-700 mt-2 space-y-1">
+                <li>• Check your phone for a payment prompt</li>
+                <li>• Enter your mobile money PIN</li>
+                <li>• Confirm the payment amount</li>
+                <li>• We&apos;ll automatically redirect you once payment is confirmed</li>
+              </ul>
+            </div>
+            <p className="text-xs text-gray-500">
+              This may take up to 5 minutes. Please don&apos;t close this window.
             </p>
           </div>
         )}

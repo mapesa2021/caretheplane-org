@@ -10,8 +10,9 @@
     "export": "next build && echo 'Static export completed. Files are in the out/ directory.'"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.55.0",
+    "@supabase/supabase-js": "^2.57.4",
     "axios": "^1.11.0",
+    "dotenv": "^17.2.2",
     "mysql2": "^3.15.0",
     "next": "14.0.4",
     "react": "^18",
@@ -29,6 +30,7 @@
     "postcss": "^8",
     "prettier": "^3.1.0",
     "tailwindcss": "^3.3.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }

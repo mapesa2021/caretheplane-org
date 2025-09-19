@@ -1,0 +1,57 @@
+async function testAdminConnection() {
+  console.log('Testing admin panel connection...');
+  
+  // Load environment variables
+  const dotenv = await import('dotenv');
+  await dotenv.config({ path: '.env.local' });
+
+  // Get Supabase URL and key from environment variables
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error('❌ Supabase environment variables not found. Check your .env.local file.');
+    return;
+  }
+
+  // Create Supabase client with the same configuration as our app
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    },
+    global: {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      }
+    }
+  });
+
+  try {
+    // Test retrieving blog posts (used in admin panel)
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .limit(1);
+
+    if (error) {
+      console.error('❌ Admin connection failed:', error);
+      return;
+    }
+
+    console.log('✅ Admin panel connection successful!');
+    if (data && data.length > 0) {
+      console.log(`Retrieved ${data.length} blog post(s) successfully`);
+      console.log('Sample data:', JSON.stringify(data[0], null, 2));
+    } else {
+      console.log('No blog posts found (this is okay if database is empty)');
+    }
+  } catch (error) {
+    console.error('❌ Unexpected error in admin connection:', error.message);
+  }
+}
+
+// Run the test
+testAdminConnection();

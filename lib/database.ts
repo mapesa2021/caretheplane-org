@@ -90,7 +90,20 @@ export const teamService = {
       .order('order', { ascending: true })
     
     if (error) throw error
-    return data || []
+    
+    // Convert snake_case to camelCase for frontend
+    return (data || []).map(item => ({
+      id: item.id,
+      name: item.name,
+      position: item.position,
+      bio: item.bio,
+      avatar: item.avatar,
+      email: item.email,
+      linkedin: item.linkedin,
+      twitter: item.twitter,
+      order: item.order,
+      isActive: item.is_active
+    }))
   },
 
   async getActive(): Promise<TeamMember[]> {
@@ -102,32 +115,101 @@ export const teamService = {
       .order('order', { ascending: true })
     
     if (error) throw error
-    return data || []
+    
+    // Convert snake_case to camelCase for frontend
+    return (data || []).map(item => ({
+      id: item.id,
+      name: item.name,
+      position: item.position,
+      bio: item.bio,
+      avatar: item.avatar,
+      email: item.email,
+      linkedin: item.linkedin,
+      twitter: item.twitter,
+      order: item.order,
+      isActive: item.is_active
+    }))
   },
 
   async create(member: Omit<TeamMember, 'id'>): Promise<TeamMember> {
     const client = checkSupabase()
+    
+    // Convert camelCase to snake_case for database
+    const dbMember = {
+      name: member.name,
+      position: member.position,
+      bio: member.bio,
+      avatar: member.avatar,
+      email: member.email,
+      linkedin: member.linkedin,
+      twitter: member.twitter,
+      'order': member.order,
+      is_active: member.isActive
+    }
+    
     const { data, error } = await client
       .from(TABLES.TEAM_MEMBERS)
-      .insert([member])
+      .insert([dbMember])
       .select()
       .single()
     
     if (error) throw error
-    return data
+    
+    // Convert snake_case back to camelCase for frontend
+    return {
+      id: data.id,
+      name: data.name,
+      position: data.position,
+      bio: data.bio,
+      avatar: data.avatar,
+      email: data.email,
+      linkedin: data.linkedin,
+      twitter: data.twitter,
+      order: data.order,
+      isActive: data.is_active
+    }
   },
 
   async update(id: string, updates: Partial<TeamMember>): Promise<TeamMember | null> {
     const client = checkSupabase()
+    
+    // Convert camelCase to snake_case for database
+    const dbUpdates: any = { updated_at: new Date().toISOString() }
+    
+    if (updates.name !== undefined) dbUpdates.name = updates.name
+    if (updates.position !== undefined) dbUpdates.position = updates.position
+    if (updates.bio !== undefined) dbUpdates.bio = updates.bio
+    if (updates.avatar !== undefined) dbUpdates.avatar = updates.avatar
+    if (updates.email !== undefined) dbUpdates.email = updates.email
+    if (updates.linkedin !== undefined) dbUpdates.linkedin = updates.linkedin
+    if (updates.twitter !== undefined) dbUpdates.twitter = updates.twitter
+    if (updates.order !== undefined) dbUpdates.order = updates.order
+    if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive
+    
     const { data, error } = await client
       .from(TABLES.TEAM_MEMBERS)
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update(dbUpdates)
       .eq('id', id)
       .select()
       .single()
     
     if (error) throw error
-    return data
+    
+    // Convert snake_case back to camelCase for frontend
+    if (!data) return null
+    
+    return {
+      id: data.id,
+      name: data.name,
+      position: data.position,
+      bio: data.bio,
+      avatar: data.avatar,
+      email: data.email,
+      linkedin: data.linkedin,
+      twitter: data.twitter,
+      order: data.order,
+      isActive: data.is_active
+    }
   },
 
   async delete(id: string): Promise<boolean> {

@@ -1,27 +1,21 @@
-🚀 CareThePlanet - cPanel Deployment Instructions
-==================================================
+🚀 CareThePlanet - cPanel Production Deployment Guide
+====================================================
 
-📦 What's Included:
+📦 WHAT'S INCLUDED:
 - Complete static website with working ZenoPay payments
-- All HTML, CSS, and JavaScript files optimized for production
+- All HTML, CSS, and JavaScript files optimized for production  
 - zenopay-proxy.php - PHP script to handle payment API calls
-- Admin panel for content management (uses localStorage)
-- Mobile-responsive design
+- Admin panel for content management
+- Mobile-responsive design with Supabase backend
 
-🔧 Deployment Steps:
+🔧 DEPLOYMENT STEPS:
 
-1. EXTRACT FILES
-   - Download caretheplanet-cpanel-ready.zip
-   - Extract ALL files directly (no subfolder needed)
-   - You should see: index.html, _next folder, admin folder, etc.
-   - ⚠️ IMPORTANT: Extract files directly, not into a subfolder!
-
-2. UPLOAD TO CPANEL
+1. 📁 UPLOAD FILES:
    - Login to your cPanel File Manager
    - Navigate to public_html directory
-   - Upload ALL extracted files DIRECTLY to public_html root
+   - Upload ALL files from the 'out' folder DIRECTLY to public_html root
    - Make sure index.html is directly in public_html (not in any subfolder)
-   - Structure should be:
+   - File structure should be:
      public_html/
      ├── index.html
      ├── zenopay-proxy.php  ← IMPORTANT: PHP file for payments
@@ -31,59 +25,59 @@
      ├── contact/
      └── ...
 
-3. SET FILE PERMISSIONS
-   - Directories: 755
-   - Files: 644
-   - zenopay-proxy.php: 644 (PHP file for payment processing)
-   - Most cPanel hosting sets these automatically
+2. ⚙️ CONFIGURE PAYMENTS:
+   - Edit zenopay-proxy.php file
+   - Replace 'your_zenopay_api_key_here' with your actual ZenoPay API key
+   - Save the file
 
-4. VERIFY PHP SUPPORT
-   - Your hosting must support PHP (most cPanel hosting does)
-   - PHP 7.4+ recommended
-   - cURL extension must be enabled (standard on most hosts)
+3. 🔐 SET FILE PERMISSIONS:
+   - Set zenopay-proxy.php permissions to 755
+   - Ensure PHP files can execute
 
-4. TEST YOUR WEBSITE
-   - Visit your domain: https://yourdomain.com
-   - Test payment with phone: 0754546567 (test mode)
+4. 🌐 VERIFY DEPLOYMENT:
+   - Visit: https://yourdomain.com
+   - Test navigation between pages
+   - Try making a test payment with phone: 0754546567
+
+🔐 ADMIN PANEL ACCESS:
    - Admin panel: https://yourdomain.com/admin/login
-     Username: admin
-     Password: caretheplanet2024
+   - Username: admin  
+   - Password: caretheplanet2024
 
-💳 Payment Features:
+💳 PAYMENT FEATURES:
 ✅ Test payments work with phone 0754546567
 ✅ Real ZenoPay integration for Tanzania mobile money
 ✅ Supports: M-Pesa, Tigo Pesa, Airtel Money
 ✅ Phone formats: 07XXXXXXXX, +255XXXXXXXXX
+✅ All payments recorded in Supabase database
+✅ Admin panel shows payment history and statistics
 
-🔐 Admin Panel Access:
-- URL: https://yourdomain.com/admin/login
-- Username: admin
-- Password: caretheplanet2024
-- Change password after first login!
+🗄️ DATABASE:
+✅ Connected to Supabase PostgreSQL
+✅ All admin features working (blog, team, payments, etc.)
+✅ Real-time data synchronization
+✅ Secure authentication and data storage
 
-📱 Mobile Money Support:
-- Test: 0754546567 (simulated payment)
-- Real: Any Tanzania number (07XXXXXXXX format)
+📱 MOBILE RESPONSIVE:
+✅ Works perfectly on all devices
+✅ Touch-friendly interface
+✅ Fast loading times
 
-⚡ Features Included:
-- Homepage with donation buttons
-- About, Projects, Blog, Contact pages
-- Complete admin panel for content management
-- Payment system with ZenoPay integration
-- Newsletter signup
-- Testimonials management
-- Team member profiles
-- Hero image management
-
-🔍 Troubleshooting:
-- If you see "Something amazing..." page, check index.html is in root
-- Clear browser cache after upload
-- Check file permissions if pages don't load
-- Test in incognito/private browsing mode
-
-📞 Support:
+🛠️ TROUBLESHOOTING:
+- If payments don't work: Check zenopay-proxy.php API key
+- If admin doesn't load: Verify all files uploaded correctly
 - Check browser console (F12) for any errors
-- Ensure all files uploaded to root directory
-- Verify domain DNS is pointing to hosting
+- Ensure domain DNS is pointing to hosting
 
-🎉 Your website is now live with working payments!
+🎉 Your website is now live with full functionality including:
+- Working payment system
+- Admin panel with Supabase integration
+- All content management features
+- Mobile-responsive design
+
+📞 SUPPORT:
+For any issues, check that:
+1. All files are in the correct location
+2. ZenoPay API key is properly configured
+3. PHP is enabled on your hosting
+4. File permissions are set correctly

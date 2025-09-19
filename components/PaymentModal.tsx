@@ -40,14 +40,31 @@ export default function PaymentModal({
     
     const pollPaymentStatus = async (): Promise<boolean> => {
       try {
-        const response = await fetch(`/zenopay-status-check.php?order_id=${orderId}`);
+        // For test payments, simulate confirmation after 3 attempts (6 seconds)
+        if (isTestPayment) {
+          if (attempts >= 2) {
+            // Simulate successful test payment
+            console.log('🧪 Test payment confirmed - redirecting to success page');
+            window.location.href = `/payment/success?orderId=${orderId}&amount=${amount}&name=${encodeURIComponent(formData.customerName)}&email=${encodeURIComponent(formData.customerEmail)}&phone=${encodeURIComponent(formData.customerPhone)}&test=true`;
+            return true;
+          }
+          return false; // Continue polling
+        }
+        
+        // For real payments, check status via API
+        const response = await fetch(`/api/payment/status?orderId=${orderId}`);
+        if (!response.ok) {
+          console.error('Status check failed:', response.status);
+          return false;
+        }
+        
         const result = await response.json();
         
-        if (result.payment_status === 'COMPLETED') {
+        if (result.success && result.status === 'completed') {
           // Payment successful - redirect to success page
-          window.location.href = `/payment/success?orderId=${orderId}&amount=${amount}&name=${encodeURIComponent(formData.customerName)}&email=${encodeURIComponent(formData.customerEmail)}&phone=${encodeURIComponent(formData.customerPhone)}&test=${isTestPayment ? 'true' : 'false'}`;
+          window.location.href = `/payment/success?orderId=${orderId}&amount=${amount}&name=${encodeURIComponent(formData.customerName)}&email=${encodeURIComponent(formData.customerEmail)}&phone=${encodeURIComponent(formData.customerPhone)}&test=false`;
           return true;
-        } else if (result.payment_status === 'FAILED') {
+        } else if (result.status === 'failed') {
           // Payment failed
           throw new Error('Payment was declined or failed');
         }

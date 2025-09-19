@@ -3,7 +3,8 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import { getHeroImages, saveHeroImages, updateHeroImage, addHeroImage, deleteHeroImage, HeroImage } from '../../utils/adminData';
+import { heroImagesService } from '../../lib/database';
+import type { HeroImage } from '../../utils/adminData';
 
 const HeroManagement = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -23,10 +24,20 @@ const HeroManagement = () => {
   }, []);
 
   useEffect(() => {
-    // Load hero images from data utility
-    const images = getHeroImages();
-    setHeroImages(images);
-  }, []);
+    if (isAuthenticated) {
+      loadHeroImages();
+    }
+  }, [isAuthenticated]);
+
+  const loadHeroImages = async () => {
+    try {
+      const images = await heroImagesService.getAll();
+      setHeroImages(images);
+    } catch (error) {
+      console.error('Error loading hero images:', error);
+      alert('Error loading hero images. Please try again.');
+    }
+  };
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -38,38 +49,48 @@ const HeroManagement = () => {
     setEditingImage({ ...image });
   };
 
-  const handleSaveImage = (e: React.FormEvent) => {
+  const handleSaveImage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingImage) return;
 
-    if (editingImage.id > 5) {
-      // This is a new image
-      const newImage = addHeroImage({
-        src: editingImage.src,
-        alt: editingImage.alt,
-        title: editingImage.title,
-        order: editingImage.order
-      });
-      setHeroImages(prev => [...prev, newImage]);
-    } else {
-      // This is an existing image
-      const updatedImage = updateHeroImage(editingImage.id, editingImage);
-      if (updatedImage) {
-        setHeroImages(prev => 
-          prev.map(img => 
-            img.id === editingImage.id ? updatedImage : img
-          )
-        );
+    setIsSubmitting(true);
+    try {
+      if (editingImage.id && editingImage.id > 0 && heroImages.find(img => img.id === editingImage.id)) {
+        // This is an existing image
+        await heroImagesService.update(editingImage.id, {
+          src: editingImage.src,
+          alt: editingImage.alt,
+          title: editingImage.title,
+          order: editingImage.order
+        });
+      } else {
+        // This is a new image
+        await heroImagesService.create({
+          src: editingImage.src,
+          alt: editingImage.alt,
+          title: editingImage.title,
+          order: editingImage.order
+        });
       }
+      
+      await loadHeroImages();
+      setEditingImage(null);
+    } catch (error) {
+      console.error('Error saving hero image:', error);
+      alert('Error saving hero image. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-    setEditingImage(null);
   };
 
-  const handleDeleteImage = (id: number) => {
+  const handleDeleteImage = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this image?')) {
-      const success = deleteHeroImage(id);
-      if (success) {
-        setHeroImages(prev => prev.filter(img => img.id !== id));
+      try {
+        await heroImagesService.delete(id);
+        await loadHeroImages();
+      } catch (error) {
+        console.error('Error deleting hero image:', error);
+        alert('Error deleting hero image. Please try again.');
       }
     }
   };
@@ -85,33 +106,33 @@ const HeroManagement = () => {
     setEditingImage(newImage);
   };
 
-  const handleReorder = (fromIndex: number, toIndex: number) => {
+  const handleReorder = async (fromIndex: number, toIndex: number) => {
     const newImages = [...heroImages];
     const [movedImage] = newImages.splice(fromIndex, 1);
     newImages.splice(toIndex, 0, movedImage);
     
     // Update order numbers
-    newImages.forEach((img, index) => {
-      img.order = index + 1;
-    });
+    const updates = newImages.map((img, index) => ({
+      ...img,
+      order: index + 1
+    }));
     
-    setHeroImages(newImages);
+    try {
+      // Update all images with new order
+      for (const img of updates) {
+        await heroImagesService.update(img.id, { order: img.order });
+      }
+      
+      await loadHeroImages();
+    } catch (error) {
+      console.error('Error reordering images:', error);
+      alert('Error reordering images. Please try again.');
+    }
   };
 
   const handleSaveAll = async () => {
-    setIsSubmitting(true);
-    
-    try {
-      // Save all hero images using the data utility
-      saveHeroImages(heroImages);
-      
-      setIsSubmitting(false);
-      alert('Hero images updated successfully!');
-    } catch (error) {
-      console.error('Error saving hero images:', error);
-      alert('Error saving hero images. Please try again.');
-      setIsSubmitting(false);
-    }
+    // This function is no longer needed since we save individual changes immediately
+    alert('All changes have been saved automatically!');
   };
 
   if (isLoading) {
@@ -329,9 +350,10 @@ const HeroManagement = () => {
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-eco-green hover:bg-eco-dark text-white rounded-lg transition-colors duration-200"
+                      disabled={isSubmitting}
+                      className="px-4 py-2 bg-eco-green hover:bg-eco-dark text-white rounded-lg transition-colors duration-200 disabled:opacity-50"
                     >
-                      Save
+                      {isSubmitting ? 'Saving...' : 'Save'}
                     </button>
                   </div>
                 </form>

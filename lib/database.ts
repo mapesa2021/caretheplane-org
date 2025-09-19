@@ -272,7 +272,218 @@ export const contactService = {
   }
 }
 
-// Newsletter Subscribers Database Operations
+// Testimonials Database Operations
+export const testimonialsService = {
+  async getAll(): Promise<Testimonial[]> {
+    const client = checkSupabase()
+    const { data, error } = await client
+      .from(TABLES.TESTIMONIALS)
+      .select('*')
+      .order('order', { ascending: true })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async create(testimonial: Omit<Testimonial, 'id'>): Promise<Testimonial> {
+    const client = checkSupabase()
+    const { data, error } = await client
+      .from(TABLES.TESTIMONIALS)
+      .insert([testimonial])
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async update(id: number, updates: Partial<Testimonial>): Promise<Testimonial | null> {
+    const client = checkSupabase()
+    const { data, error } = await client
+      .from(TABLES.TESTIMONIALS)
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async delete(id: number): Promise<boolean> {
+    const client = checkSupabase()
+    const { error } = await client
+      .from(TABLES.TESTIMONIALS)
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+    return true
+  }
+}
+
+// Hero Images Database Operations
+export const heroImagesService = {
+  async getAll(): Promise<HeroImage[]> {
+    const client = checkSupabase()
+    const { data, error } = await client
+      .from(TABLES.HERO_IMAGES)
+      .select('*')
+      .order('order', { ascending: true })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async create(heroImage: Omit<HeroImage, 'id'>): Promise<HeroImage> {
+    const client = checkSupabase()
+    const { data, error } = await client
+      .from(TABLES.HERO_IMAGES)
+      .insert([heroImage])
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async update(id: number, updates: Partial<HeroImage>): Promise<HeroImage | null> {
+    const client = checkSupabase()
+    const { data, error } = await client
+      .from(TABLES.HERO_IMAGES)
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async delete(id: number): Promise<boolean> {
+    const client = checkSupabase()
+    const { error } = await client
+      .from(TABLES.HERO_IMAGES)
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+    return true
+  }
+}
+
+// Tree Packages Database Operations
+export const treePackagesService = {
+  async getAll(): Promise<TreePackage[]> {
+    const client = checkSupabase()
+    const { data, error } = await client
+      .from(TABLES.TREE_PACKAGES)
+      .select('*')
+      .order('order', { ascending: true })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async create(treePackage: Omit<TreePackage, 'id'>): Promise<TreePackage> {
+    const client = checkSupabase()
+    const { data, error } = await client
+      .from(TABLES.TREE_PACKAGES)
+      .insert([treePackage])
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async update(id: number, updates: Partial<TreePackage>): Promise<TreePackage | null> {
+    const client = checkSupabase()
+    const { data, error } = await client
+      .from(TABLES.TREE_PACKAGES)
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async delete(id: number): Promise<boolean> {
+    const client = checkSupabase()
+    const { error } = await client
+      .from(TABLES.TREE_PACKAGES)
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+    return true
+  }
+}
+
+// Homepage Buttons Database Operations
+export const buttonsService = {
+  async getAll(): Promise<Button[]> {
+    const client = checkSupabase()
+    const { data, error } = await client
+      .from(TABLES.BUTTONS)
+      .select('*')
+      .order('order', { ascending: true })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async getBySection(section: string): Promise<Button[]> {
+    const client = checkSupabase()
+    const { data, error } = await client
+      .from(TABLES.BUTTONS)
+      .select('*')
+      .eq('section', section)
+      .eq('is_active', true)
+      .order('order', { ascending: true })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async create(button: Button): Promise<Button> {
+    const client = checkSupabase()
+    const { data, error } = await client
+      .from(TABLES.BUTTONS)
+      .insert([button])
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async update(id: string, updates: Partial<Button>): Promise<Button | null> {
+    const client = checkSupabase()
+    const { data, error } = await client
+      .from(TABLES.BUTTONS)
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async delete(id: string): Promise<boolean> {
+    const client = checkSupabase()
+    const { error } = await client
+      .from(TABLES.BUTTONS)
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+    return true
+  }
+}
 export const newsletterService = {
   async getAll(): Promise<NewsletterSubscriber[]> {
     const client = checkSupabase()

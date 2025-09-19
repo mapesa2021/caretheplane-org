@@ -1,20 +1,16 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { 
-  getTreePackages, 
-  addTreePackage, 
-  updateTreePackage, 
-  deleteTreePackage, 
-  TreePackage,
-  isAdminAuthenticated 
-} from '../../utils/adminData';
+import { treePackagesService } from '../../lib/database';
+import type { TreePackage } from '../../utils/adminData';
 
 const PackagesAdmin = () => {
   const router = useRouter();
   const [packages, setPackages] = useState<TreePackage[]>([]);
   const [isEditing, setIsEditing] = useState<number | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -28,17 +24,29 @@ const PackagesAdmin = () => {
 
   // Check authentication
   useEffect(() => {
-    if (!isAdminAuthenticated()) {
+    const token = localStorage.getItem('adminToken');
+    if (token !== 'admin-token-123') {
       router.push('/admin/login');
     }
   }, [router]);
 
   // Load packages
   useEffect(() => {
-    if (isAdminAuthenticated()) {
-      setPackages(getTreePackages());
-    }
+    loadPackages();
   }, []);
+
+  const loadPackages = async () => {
+    try {
+      setIsLoading(true);
+      const data = await treePackagesService.getAll();
+      setPackages(data);
+    } catch (error) {
+      console.error('Error loading packages:', error);
+      alert('Error loading packages. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -67,7 +75,7 @@ const PackagesAdmin = () => {
     setFormData(prev => ({ ...prev, features: newFeatures }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Filter out empty features
@@ -83,14 +91,22 @@ const PackagesAdmin = () => {
       features: filteredFeatures
     };
     
-    if (isEditing) {
-      updateTreePackage(isEditing, packageData);
-    } else {
-      addTreePackage(packageData);
+    setIsSubmitting(true);
+    try {
+      if (isEditing) {
+        await treePackagesService.update(isEditing, packageData);
+      } else {
+        await treePackagesService.create(packageData);
+      }
+      
+      await loadPackages();
+      resetForm();
+    } catch (error) {
+      console.error('Error saving package:', error);
+      alert('Error saving package. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setPackages(getTreePackages());
-    resetForm();
   };
 
   const handleEdit = (treePackage: TreePackage) => {
@@ -108,10 +124,15 @@ const PackagesAdmin = () => {
     setIsAdding(false);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to delete this package?')) {
-      deleteTreePackage(id);
-      setPackages(getTreePackages());
+      try {
+        await treePackagesService.delete(id);
+        await loadPackages();
+      } catch (error) {
+        console.error('Error deleting package:', error);
+        alert('Error deleting package. Please try again.');
+      }
     }
   };
 
@@ -132,8 +153,15 @@ const PackagesAdmin = () => {
 
   const currencyOptions = ['Tsh', '$', '€', '£', '¥'];
 
-  if (!isAdminAuthenticated()) {
-    return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-eco-green mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading packages...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -311,9 +339,10 @@ const PackagesAdmin = () => {
                 <div className="flex gap-4">
                   <button
                     type="submit"
-                    className="bg-eco-green hover:bg-eco-dark text-white px-6 py-2 rounded-lg transition-colors"
+                    disabled={isSubmitting}
+                    className="bg-eco-green hover:bg-eco-dark text-white px-6 py-2 rounded-lg transition-colors disabled:opacity-50"
                   >
-                    {isEditing ? 'Update Package' : 'Add Package'}
+                    {isSubmitting ? 'Saving...' : (isEditing ? 'Update Package' : 'Add Package')}
                   </button>
                   <button
                     type="button"

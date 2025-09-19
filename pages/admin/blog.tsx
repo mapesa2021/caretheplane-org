@@ -2,12 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { 
-  getBlogPosts, 
-  deleteBlogPost, 
-  BlogPost,
-  isAdminAuthenticated 
-} from '../../utils/adminData';
+import { blogService } from '../../lib/database';
+import type { BlogPost } from '../../utils/adminData';
 
 const BlogAdmin = () => {
   const router = useRouter();
@@ -16,45 +12,52 @@ const BlogAdmin = () => {
 
   // Check authentication
   useEffect(() => {
-    if (!isAdminAuthenticated()) {
+    const token = localStorage.getItem('adminToken');
+    if (token !== 'admin-token-123') {
       router.push('/admin/login');
     }
   }, [router]);
 
   // Load blog posts
   useEffect(() => {
-    if (isAdminAuthenticated()) {
-      setBlogPosts(getBlogPosts());
-      setIsLoading(false);
-    }
+    loadBlogPosts();
   }, []);
 
-  const handleDelete = (id: number) => {
+  const loadBlogPosts = async () => {
+    try {
+      setIsLoading(true);
+      const data = await blogService.getAll();
+      setBlogPosts(data);
+    } catch (error) {
+      console.error('Error loading blog posts:', error);
+      alert('Error loading blog posts. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to delete this blog post?')) {
-      deleteBlogPost(id);
-      setBlogPosts(getBlogPosts());
+      try {
+        await blogService.delete(id);
+        await loadBlogPosts();
+      } catch (error) {
+        console.error('Error deleting blog post:', error);
+        alert('Error deleting blog post. Please try again.');
+      }
     }
   };
 
-  const handleStatusToggle = (post: BlogPost) => {
-    const updatedPost: BlogPost = {
-      ...post,
-      status: post.status === 'published' ? 'draft' : 'published'
-    };
-    
-    // Update the post in localStorage
-    const posts = getBlogPosts();
-    const index = posts.findIndex(p => p.id === post.id);
-    if (index !== -1) {
-      posts[index] = updatedPost;
-      localStorage.setItem('caretheplanet_blog_posts', JSON.stringify(posts));
-      setBlogPosts(posts);
+  const handleStatusToggle = async (post: BlogPost) => {
+    try {
+      const newStatus = post.status === 'published' ? 'draft' : 'published';
+      await blogService.update(post.id, { status: newStatus });
+      await loadBlogPosts();
+    } catch (error) {
+      console.error('Error updating post status:', error);
+      alert('Error updating post status. Please try again.');
     }
   };
-
-  if (!isAdminAuthenticated()) {
-    return <div>Loading...</div>;
-  }
 
   if (isLoading) {
     return (

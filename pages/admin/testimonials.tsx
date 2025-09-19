@@ -1,20 +1,16 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { 
-  getTestimonials, 
-  addTestimonial, 
-  updateTestimonial, 
-  deleteTestimonial, 
-  Testimonial,
-  isAdminAuthenticated 
-} from '../../utils/adminData';
+import { testimonialsService } from '../../lib/database';
+import type { Testimonial } from '../../utils/adminData';
 
 const TestimonialsAdmin = () => {
   const router = useRouter();
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [isEditing, setIsEditing] = useState<number | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     role: '',
@@ -25,17 +21,29 @@ const TestimonialsAdmin = () => {
 
   // Check authentication
   useEffect(() => {
-    if (!isAdminAuthenticated()) {
+    const token = localStorage.getItem('adminToken');
+    if (token !== 'admin-token-123') {
       router.push('/admin/login');
     }
   }, [router]);
 
   // Load testimonials
   useEffect(() => {
-    if (isAdminAuthenticated()) {
-      setTestimonials(getTestimonials());
-    }
+    loadTestimonials();
   }, []);
+
+  const loadTestimonials = async () => {
+    try {
+      setIsLoading(true);
+      const data = await testimonialsService.getAll();
+      setTestimonials(data);
+    } catch (error) {
+      console.error('Error loading testimonials:', error);
+      alert('Error loading testimonials. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -45,17 +53,25 @@ const TestimonialsAdmin = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
-    if (isEditing) {
-      updateTestimonial(isEditing, formData);
-    } else {
-      addTestimonial(formData);
+    try {
+      if (isEditing) {
+        await testimonialsService.update(isEditing, formData);
+      } else {
+        await testimonialsService.create(formData);
+      }
+      
+      await loadTestimonials();
+      resetForm();
+    } catch (error) {
+      console.error('Error saving testimonial:', error);
+      alert('Error saving testimonial. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setTestimonials(getTestimonials());
-    resetForm();
   };
 
   const handleEdit = (testimonial: Testimonial) => {
@@ -70,10 +86,15 @@ const TestimonialsAdmin = () => {
     setIsAdding(false);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to delete this testimonial?')) {
-      deleteTestimonial(id);
-      setTestimonials(getTestimonials());
+      try {
+        await testimonialsService.delete(id);
+        await loadTestimonials();
+      } catch (error) {
+        console.error('Error deleting testimonial:', error);
+        alert('Error deleting testimonial. Please try again.');
+      }
     }
   };
 
@@ -94,8 +115,15 @@ const TestimonialsAdmin = () => {
     '👨‍🎓', '👩‍🎓', '👨‍⚕️', '👩‍⚕️', '👨‍🏫', '👩‍🏫', '👨‍💻', '👩‍💻'
   ];
 
-  if (!isAdminAuthenticated()) {
-    return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-eco-green mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading testimonials...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -217,9 +245,10 @@ const TestimonialsAdmin = () => {
                 <div className="flex gap-4">
                   <button
                     type="submit"
-                    className="bg-eco-green hover:bg-eco-dark text-white px-6 py-2 rounded-lg transition-colors"
+                    disabled={isSubmitting}
+                    className="bg-eco-green hover:bg-eco-dark text-white px-6 py-2 rounded-lg transition-colors disabled:opacity-50"
                   >
-                    {isEditing ? 'Update Testimonial' : 'Add Testimonial'}
+                    {isSubmitting ? 'Saving...' : (isEditing ? 'Update Testimonial' : 'Add Testimonial')}
                   </button>
                   <button
                     type="button"

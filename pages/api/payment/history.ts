@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { paymentService } from '../../../lib/database';
+import { paymentService } from '../../../lib/mysql-database';
 
 interface PaymentHistoryResponse {
   success: boolean;
@@ -12,10 +12,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // Check environment variables
     console.log('Environment check:', {
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Missing',
-      supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set' : 'Missing',
-      nodeEnv: process.env.NODE_ENV,
-      allEnvVars: Object.keys(process.env).filter(key => key.includes('SUPABASE'))
+      dbHost: process.env.DB_HOST ? 'Set' : 'Missing',
+      dbDatabase: process.env.DB_DATABASE ? 'Set' : 'Missing',
+      dbUsername: process.env.DB_USERNAME ? 'Set' : 'Missing',
+      nodeEnv: process.env.NODE_ENV
     });
 
     if (req.method === 'GET') {
@@ -65,12 +65,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       } catch (dbError: any) {
         console.error('Database error when creating payment:', dbError);
         
-        // Check if it's a Supabase connection error
-        if (dbError.message && dbError.message.includes('Supabase client not available')) {
+        // Check if it's a MySQL connection error
+        if (dbError.message && (dbError.message.includes('ECONNREFUSED') || dbError.message.includes('ER_ACCESS_DENIED'))) {
           return res.status(500).json({
             success: false,
             message: 'Database connection failed',
-            error: 'Supabase client not available. Please check environment variables.'
+            error: 'MySQL connection failed. Please check database credentials and server status.'
           });
         }
         

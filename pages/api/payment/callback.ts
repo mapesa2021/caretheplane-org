@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { paymentService } from '../../../lib/database';
+import { paymentService } from '../../../lib/mysql-database';
 import { ZENOPAY_CONFIG } from '../../../lib/zenopay';
 
 // ZenoPay Webhook Payload Interface

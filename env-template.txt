@@ -1,13 +1,4 @@
-# Database Configuration - MySQL (Primary)
-# Get these from your cPanel MySQL database setup
-DB_CONNECTION=mysql
-DB_HOST=localhost
-DB_PORT=3306
-DB_DATABASE=carethep_caretheplanet
-DB_USERNAME=carethep_caretheplanet
-DB_PASSWORD=caretheplanet@2025
-
-# Supabase Configuration (Optional - for backup/migration)
+# Supabase Configuration
 # Copy these variables to your .env.local file
 
 # Get these from your Supabase project dashboard

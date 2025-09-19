@@ -1,0 +1,89 @@
+🚀 CareThePlanet - cPanel Deployment Instructions
+==================================================
+
+📦 What's Included:
+- Complete static website with working ZenoPay payments
+- All HTML, CSS, and JavaScript files optimized for production
+- zenopay-proxy.php - PHP script to handle payment API calls
+- Admin panel for content management (uses localStorage)
+- Mobile-responsive design
+
+🔧 Deployment Steps:
+
+1. EXTRACT FILES
+   - Download caretheplanet-cpanel-ready.zip
+   - Extract ALL files directly (no subfolder needed)
+   - You should see: index.html, _next folder, admin folder, etc.
+   - ⚠️ IMPORTANT: Extract files directly, not into a subfolder!
+
+2. UPLOAD TO CPANEL
+   - Login to your cPanel File Manager
+   - Navigate to public_html directory
+   - Upload ALL extracted files DIRECTLY to public_html root
+   - Make sure index.html is directly in public_html (not in any subfolder)
+   - Structure should be:
+     public_html/
+     ├── index.html
+     ├── zenopay-proxy.php  ← IMPORTANT: PHP file for payments
+     ├── _next/
+     ├── admin/
+     ├── blog/
+     ├── contact/
+     └── ...
+
+3. SET FILE PERMISSIONS
+   - Directories: 755
+   - Files: 644
+   - zenopay-proxy.php: 644 (PHP file for payment processing)
+   - Most cPanel hosting sets these automatically
+
+4. VERIFY PHP SUPPORT
+   - Your hosting must support PHP (most cPanel hosting does)
+   - PHP 7.4+ recommended
+   - cURL extension must be enabled (standard on most hosts)
+
+4. TEST YOUR WEBSITE
+   - Visit your domain: https://yourdomain.com
+   - Test payment with phone: 0754546567 (test mode)
+   - Admin panel: https://yourdomain.com/admin/login
+     Username: admin
+     Password: caretheplanet2024
+
+💳 Payment Features:
+✅ Test payments work with phone 0754546567
+✅ Real ZenoPay integration for Tanzania mobile money
+✅ Supports: M-Pesa, Tigo Pesa, Airtel Money
+✅ Phone formats: 07XXXXXXXX, +255XXXXXXXXX
+
+🔐 Admin Panel Access:
+- URL: https://yourdomain.com/admin/login
+- Username: admin
+- Password: caretheplanet2024
+- Change password after first login!
+
+📱 Mobile Money Support:
+- Test: 0754546567 (simulated payment)
+- Real: Any Tanzania number (07XXXXXXXX format)
+
+⚡ Features Included:
+- Homepage with donation buttons
+- About, Projects, Blog, Contact pages
+- Complete admin panel for content management
+- Payment system with ZenoPay integration
+- Newsletter signup
+- Testimonials management
+- Team member profiles
+- Hero image management
+
+🔍 Troubleshooting:
+- If you see "Something amazing..." page, check index.html is in root
+- Clear browser cache after upload
+- Check file permissions if pages don't load
+- Test in incognito/private browsing mode
+
+📞 Support:
+- Check browser console (F12) for any errors
+- Ensure all files uploaded to root directory
+- Verify domain DNS is pointing to hosting
+
+🎉 Your website is now live with working payments!

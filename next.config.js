@@ -1,11 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Static export for cPanel hosting - DISABLED to enable API routes
-  // output: 'export',
+  // Static export for cPanel hosting
+  output: 'export',
   trailingSlash: true,
   images: {
     unoptimized: true,
     domains: ['images.unsplash.com'],
+  },
+  // Disable API routes for static export
+  experimental: {
+    isrMemoryCacheSize: 0,
   },
 }
 

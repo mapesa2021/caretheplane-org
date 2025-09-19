@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { generateReference, formatAmount } from '../lib/zenopay';
+import { generateReference, formatAmount, normalizePhoneForZenoPay, isValidTanzaniaPhone } from '../lib/zenopay';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -45,54 +45,73 @@ export default function PaymentModal({
     try {
       const orderId = generateReference();
       
-      // Directly initiate payment with ZenoPay (no database dependency)
-      const paymentRequest = {
-        orderId,
-        amount,
-        currency: 'TZS',
-        buyerEmail: formData.customerEmail,
-        buyerName: formData.customerName,
-        buyerPhone: formData.customerPhone
+      // Validate phone number
+      if (!isValidTanzaniaPhone(formData.customerPhone)) {
+        throw new Error('Please enter a valid Tanzanian phone number (07XXXXXXXX or +255XXXXXXXXX)');
+      }
+
+      const normalizedPhone = normalizePhoneForZenoPay(formData.customerPhone);
+      
+      // Check for test phone number
+      const isTestPhone = normalizedPhone === '0754546567';
+      
+      if (isTestPhone) {
+        console.log('🧪 Test payment detected - simulating success');
+        
+        // Simulate delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        setPaymentStatus('success');
+        
+        // Redirect to success page after 3 seconds
+        setTimeout(() => {
+          window.location.href = `/payment/success?orderId=${orderId}&amount=${amount}&name=${encodeURIComponent(formData.customerName)}&email=${encodeURIComponent(formData.customerEmail)}&phone=${encodeURIComponent(formData.customerPhone)}&test=true`;
+        }, 3000);
+        
+        return;
+      }
+      
+      // For real payments, call our PHP proxy instead of ZenoPay directly
+      console.log('🚀 Initiating real payment via PHP proxy');
+      
+      const zenoPayRequest = {
+        order_id: orderId,
+        buyer_email: formData.customerEmail,
+        buyer_name: formData.customerName,
+        buyer_phone: normalizedPhone,
+        amount: amount
       };
 
-      console.log('🚀 Initiating payment:', paymentRequest);
-
-      const paymentResponse = await fetch('/api/payment/initiate', {
+      const response = await fetch('/zenopay-proxy.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(paymentRequest),
+        body: JSON.stringify(zenoPayRequest),
       });
 
-      console.log('📞 Payment response status:', paymentResponse.status);
+      console.log('📞 Payment response status:', response.status);
       
-      if (!paymentResponse.ok) {
-        const errorText = await paymentResponse.text();
+      if (!response.ok) {
+        const errorText = await response.text();
         console.error('❌ Payment response error:', errorText);
-        throw new Error(`Payment API error (${paymentResponse.status}): ${errorText}`);
+        throw new Error(`Payment API error (${response.status}): ${errorText}`);
       }
 
-      const result = await paymentResponse.json();
+      const result = await response.json();
 
-      console.log('💳 Payment API response:', result);
+      console.log('💳 ZenoPay response:', result);
 
-      if (result.success) {
+      if (result.status === 'success' && result.resultcode === '000') {
         setPaymentStatus('success');
         
-        // Check if this is a test phone number for immediate redirect
-        if (formData.customerPhone === '0754546567') {
-          // For test payments, redirect after 3 seconds (matching backend simulation)
-          setTimeout(() => {
-            window.location.href = `/payment/success?orderId=${orderId}&amount=${amount}&name=${encodeURIComponent(formData.customerName)}&email=${encodeURIComponent(formData.customerEmail)}&phone=${encodeURIComponent(formData.customerPhone)}`;
-          }, 3000);
-        } else {
-          // For real payments, redirect immediately (ZenoPay will handle the flow)
+        // Show success message and redirect
+        setTimeout(() => {
           window.location.href = `/payment/success?orderId=${orderId}&amount=${amount}&name=${encodeURIComponent(formData.customerName)}&email=${encodeURIComponent(formData.customerEmail)}&phone=${encodeURIComponent(formData.customerPhone)}`;
-        }
+        }, 2000);
       } else {
         console.error('❌ Payment initiation failed:', result);
-        throw new Error(result.message || result.error || 'Payment initiation failed');
+        throw new Error(result.message || 'Payment initiation failed');
       }
     } catch (error) {
       console.error('❌ Payment error:', error);

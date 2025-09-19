@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { ZenoPayService } from '../../../lib/zenopay';
-import { paymentService } from '../../../lib/mysql-database';
+import { paymentService } from '../../../lib/database';
 
 interface PaymentStatusRequest {
   orderId: string;

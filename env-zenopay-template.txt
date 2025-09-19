@@ -1,0 +1,11 @@
+# ZenoPay Configuration - Backend Environment Variables
+# Add these to your .env.local file
+
+# ZenoPay API Key (for backend use - NOT exposed to frontend)
+ZENOPAY_API_KEY=ArtYqYpjmi8UjbWqxhCe7SLqpSCbws-_7vjudTuGR91PT6pmWX85lapiuq7xpXsJ2BkPZ9gkxDEDotPgtjdV6g
+ 
+# Note: 
+# 1. This API key is kept secure on the backend
+# 2. Frontend never sees the actual ZenoPay API key
+# 3. All payment requests go through your secure backend endpoints
+# 4. You can override the default by setting this environment variable 
